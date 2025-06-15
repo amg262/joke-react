@@ -18,6 +18,7 @@ class ApiService {
       credentials: 'include', // Include cookies
     });
 
+    
     if (response.status === 401) {
       localStorage.removeItem('jwt_token');
       throw new Error('Unauthorized');
