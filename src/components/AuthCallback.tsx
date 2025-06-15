@@ -6,11 +6,12 @@ import { Loader2, AlertCircle } from 'lucide-react';
 export const AuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { handleOAuthCallback, isLoading, error } = useAuthStore();
+  const { handleOAuthCallback, isLoading, error, checkAuthStatus } = useAuthStore();
 
   useEffect(() => {
     const processCallback = async () => {
       const token = searchParams.get('token');
+      const code = searchParams.get('code');
       const errorParam = searchParams.get('error');
 
       if (errorParam) {
@@ -22,6 +23,7 @@ export const AuthCallback: React.FC = () => {
         return;
       }
 
+      // If we have a token, use it directly
       if (token) {
         const success = await handleOAuthCallback(token);
         if (success) {
@@ -33,17 +35,40 @@ export const AuthCallback: React.FC = () => {
             } 
           });
         }
-      } else {
-        navigate('/login', { 
-          state: { 
-            error: 'No authentication token received.' 
-          } 
-        });
+        return;
       }
+
+      // If we have an OAuth code but no token, the backend might have set a cookie
+      // Let's check auth status to see if we're authenticated via cookie
+      if (code) {
+        await checkAuthStatus();
+        // Give it a moment to check status, then check if authenticated
+        setTimeout(async () => {
+          await checkAuthStatus();
+          const authStore = useAuthStore.getState();
+          if (authStore.isAuthenticated) {
+            navigate('/jokes', { replace: true });
+          } else {
+            navigate('/login', { 
+              state: { 
+                error: 'OAuth authentication failed. Please try again.' 
+              } 
+            });
+          }
+        }, 1000);
+        return;
+      }
+
+      // No token or code received
+      navigate('/login', { 
+        state: { 
+          error: 'No authentication token or code received.' 
+        } 
+      });
     };
 
     processCallback();
-  }, [searchParams, navigate, handleOAuthCallback]);
+  }, [searchParams, navigate, handleOAuthCallback, checkAuthStatus]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">

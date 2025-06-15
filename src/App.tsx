@@ -1,11 +1,31 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { LoginForm } from './components/LoginForm';
 import { Dashboard } from './components/Dashboard';
 import { Jokes } from './components/Jokes';
 import { AuthCallback } from './components/AuthCallback';
 import { ProtectedRoute } from './components/ProtectedRoute';
+
+// Component to handle potential OAuth callbacks on root URL
+const RootHandler: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated } = useAuthStore();
+  
+  // Check if this is an OAuth callback with code or token
+  const hasOAuthParams = searchParams.get('code') || searchParams.get('token') || searchParams.get('error');
+  
+  if (hasOAuthParams) {
+    // Redirect to proper callback handler
+    const queryString = searchParams.toString();
+    return <Navigate to={`/auth/callback?${queryString}`} replace />;
+  }
+  
+  // Normal root behavior
+  return isAuthenticated ? 
+    <Navigate to="/jokes" replace /> : 
+    <Navigate to="/login" replace />;
+};
 
 function App() {
   const { checkAuthStatus, isAuthenticated } = useAuthStore();
@@ -63,11 +83,7 @@ function App() {
         
         <Route 
           path="/" 
-          element={
-            isAuthenticated ? 
-              <Navigate to="/jokes" replace /> : 
-              <Navigate to="/login" replace />
-          } 
+          element={<RootHandler />}
         />
         
         <Route 
