@@ -1,17 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { apiService } from '../services/api';
-import { Chrome, Shield, Facebook } from 'lucide-react';
+import { config } from '../config/environment';
+import { Chrome, Shield, Facebook, Loader2 } from 'lucide-react';
 
 export const LoginForm: React.FC = () => {
   const { error } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
-  const handleSocialLogin = (provider: 'google' | 'microsoft' | 'facebook') => {
+  const handleSocialLogin = async (provider: 'google' | 'microsoft' | 'facebook') => {
     try {
-      // Use direct redirect to avoid CORS issues
-      apiService.redirectToOAuth(provider);
+      setIsLoading(true);
+      setLoadingProvider(provider);
+      
+      // Fetch the OAuth URL from the backend
+      const response = await fetch(`${config.apiBaseUrl}/api/v1/auth/${provider}/login`);
+      const { authUrl } = await response.json();
+      
+      // Redirect to the OAuth URL
+      window.location.href = authUrl;
     } catch (error) {
       console.error('OAuth login error:', error);
+      setIsLoading(false);
+      setLoadingProvider(null);
       // You could also show an error message to the user here
     }
   };
@@ -46,28 +57,43 @@ export const LoginForm: React.FC = () => {
           <div className="space-y-3">
             <button
               onClick={() => handleSocialLogin('google')}
-              className="w-full bg-white/50 backdrop-blur-sm border border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-white/70 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all flex items-center justify-center space-x-3"
+              disabled={isLoading}
+              className="w-full bg-white/50 backdrop-blur-sm border border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-white/70 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Chrome className="w-5 h-5 text-red-500" />
-              <span>Continue with Google</span>
+              {loadingProvider === 'google' ? (
+                <Loader2 className="w-5 h-5 animate-spin text-red-500" />
+              ) : (
+                <Chrome className="w-5 h-5 text-red-500" />
+              )}
+              <span>{loadingProvider === 'google' ? 'Connecting...' : 'Continue with Google'}</span>
             </button>
 
             <button
               onClick={() => handleSocialLogin('microsoft')}
-              className="w-full bg-white/50 backdrop-blur-sm border border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-white/70 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all flex items-center justify-center space-x-3"
+              disabled={isLoading}
+              className="w-full bg-white/50 backdrop-blur-sm border border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-white/70 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="w-5 h-5 bg-blue-600 rounded-sm flex items-center justify-center">
-                <div className="w-3 h-3 bg-white rounded-sm"></div>
-              </div>
-              <span>Continue with Microsoft</span>
+              {loadingProvider === 'microsoft' ? (
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+              ) : (
+                <div className="w-5 h-5 bg-blue-600 rounded-sm flex items-center justify-center">
+                  <div className="w-3 h-3 bg-white rounded-sm"></div>
+                </div>
+              )}
+              <span>{loadingProvider === 'microsoft' ? 'Connecting...' : 'Continue with Microsoft'}</span>
             </button>
 
             <button
               onClick={() => handleSocialLogin('facebook')}
-              className="w-full bg-white/50 backdrop-blur-sm border border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-white/70 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all flex items-center justify-center space-x-3"
+              disabled={isLoading}
+              className="w-full bg-white/50 backdrop-blur-sm border border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-white/70 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Facebook className="w-5 h-5 text-blue-600" />
-              <span>Continue with Facebook</span>
+              {loadingProvider === 'facebook' ? (
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+              ) : (
+                <Facebook className="w-5 h-5 text-blue-600" />
+              )}
+              <span>{loadingProvider === 'facebook' ? 'Connecting...' : 'Continue with Facebook'}</span>
             </button>
           </div>
         </div>
