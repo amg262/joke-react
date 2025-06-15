@@ -6,10 +6,10 @@ import { Chrome, Shield, Facebook } from 'lucide-react';
 export const LoginForm: React.FC = () => {
   const { error } = useAuthStore();
 
-  const handleSocialLogin = async (provider: 'google' | 'microsoft' | 'facebook') => {
+  const handleSocialLogin = (provider: 'google' | 'microsoft' | 'facebook') => {
     try {
-      const url = await apiService.getOAuthUrl(provider);
-      window.location.href = url;
+      // Use direct redirect to avoid CORS issues
+      apiService.redirectToOAuth(provider);
     } catch (error) {
       console.error('OAuth login error:', error);
       // You could also show an error message to the user here

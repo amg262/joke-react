@@ -1,7 +1,8 @@
 import { LoginCredentials, AuthResponse, User, Joke, JokesResponse, JokeSearchParams, Tag } from '../types/auth';
+import { config } from '../config/environment';
 
 class ApiService {
-  private baseURL = 'https://localhost:8081';
+  private baseURL = config.apiBaseUrl;
 
   private async fetchWithAuth(endpoint: string, options: RequestInit = {}): Promise<Response> {
     const token = localStorage.getItem('jwt_token');
